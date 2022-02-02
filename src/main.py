@@ -1,4 +1,4 @@
-from models import *
+from animation import Animation
 import os
 import shutil
 

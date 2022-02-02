@@ -1,9 +1,5 @@
 from __future__ import annotations
-from typing import List
 
-from PIL import Image, ImageDraw, ImageColor
-import cv2
-import numpy as np
 import random
 import math
 
@@ -49,6 +45,7 @@ class Particle:
             self.colour = Particle.default_colors[
                 random.randint(0, len(Particle.default_colors) - 1)]
 
+    # TODO: Should be removed when proper collision system is implemented
     def collide(self, di: int) -> bool:
         """Check if the particle collides the container's bounds
         :param di: 0 for "x" dimension, 1 for "y" dimension
@@ -67,6 +64,7 @@ class Particle:
             # Update particle position
             self.center[i] += math.floor(self.velocity[i] * dt)
             # Check collision with container
+            # TODO: Should be changed when collision system is implemented
             if self.collide(i):
                 self.velocity[i] *= -1
             # Apply acceleration to velocity
@@ -89,7 +87,7 @@ class Container:
     height: int
     width: int
     acceleration: list[float]
-    particles: List[Particle]
+    particles: list[Particle]
 
     def __init__(self, w: int, h: int, particles: list[Particle] = None,
                  acceleration: list[int, int] = (0, 0)) -> None:
@@ -140,61 +138,3 @@ class Container:
             particle = Particle(r, random.randint(1, 10), [cx, cy], v,
                      (self.width, self.height), self.acceleration)
             self.particles.append(particle)
-
-
-class Animation:
-    """A class of an animation
-    === Instance Attributes ===
-    fps: frame-rate of the animation
-    duration: length of the animation in seconds
-    resolution: dimensions of the animation
-    title: output file name
-    """
-    fps: int
-    duration: int
-    resolution: tuple[int, int]
-    container: Container
-    frames: list[Image]
-    title: str
-
-    def __init__(self, fps: int, duration: int, res: tuple[int, int],
-                 title: str = "animation") -> None:
-        """Initialize an animation with randomly generated particles"""
-        self.fps = fps
-        self.duration = duration
-        self.resolution = res
-        self.frames = []
-        self.container = Container(res[0], res[1], acceleration=[0, 0])
-        self.container.add_random_particle(1)
-        self.title = title
-
-    def start(self) -> None:
-        """Start rendering animation"""
-        output = cv2.VideoWriter(f'./output/{self.title}.avi',
-                                 cv2.VideoWriter_fourcc(*"DIVX"),
-                                 self.fps, self.resolution)
-        for i in range(self.fps * self.duration):
-            if i % 20:
-                self.composite_frames(output)
-            self.record_frame()
-            self.container.update(self.fps)
-
-        self.composite_frames(output)
-        output.release()
-
-    def record_frame(self) -> None:
-        """Record the current frame"""
-        frame = Image.new(mode="RGB", size=self.resolution,
-                          color=ImageColor.getrgb("#141414"))
-        draw = ImageDraw.Draw(frame)
-        for p in self.container.particles:
-            cx, cy = p.center
-            r = p.radius
-            col = ImageColor.getrgb(p.colour)
-            draw.ellipse((cx - r, cy - r, cx + r, cy + r), fill=col)
-        self.frames.append(frame)
-
-    def composite_frames(self, output: cv2.VideoWriter) -> None:
-        """Composite current frames into an animation"""
-        while len(self.frames) > 0:
-            output.write(np.array(self.frames.pop(0)))
